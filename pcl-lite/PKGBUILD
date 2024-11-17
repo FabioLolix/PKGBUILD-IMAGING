@@ -1,0 +1,54 @@
+# Maintainer: Fabio 'Lolix' Loli <fabio.loli@disroot.org> -> https://github.com/FabioLolix
+
+pkgname=pcl-lite
+pkgver=1.14.1
+pkgrel=1
+pkgdesc="Point Cloud Library"
+arch=(x86_64)
+url="https://github.com/PointCloudLibrary/pcl"
+license=(BSD-3-Clause)
+depends=(glibc gcc-libs libpng flann vtk eigen boost-libs cjson libpcap libx11 lz4 libglvnd qhull libusb)
+makedepends=(git cmake hdf5 cli11 python-mpi4py openvr openxr ospray pdal gdal adios2 boost liblas opencascade unixodbc
+             ffmpeg proj fast_float libharu netcdf cgns embree freetype2 utf8cpp openvdb nlohmann-json verdict glew
+             postgresql-libs
+             doxygen
+
+             qt5-base qt5-declarative
+             qt6-base qt6-declarative
+            )
+provides=(pcl)
+conflicts=(pcl)
+source=("git+https://github.com/PointCloudLibrary/pcl.git#tag=pcl-${pkgver}"
+        "pcl_boost-fix-01.patch::https://github.com/PointCloudLibrary/pcl/commit/4d0a15bb7bb85d304a7c1f7e2a4c5b5ca58cbb10.patch"
+        "pcl_boost-fix-02.patch::https://github.com/PointCloudLibrary/pcl/commit/c6bbf02a084a39a02d9e2fc318a59fe2f1ff55c1.patch"
+
+)
+sha256sums=('5f536114284f6ebfcff379ae54c207b884c4968160f228e515ba5db2af0d6c95'
+            'bd8ca26a08035676c68e4852127655746076334558b24d45ecb1fff7fee6b442'
+            'a0f251b8b86b06feadbb75184ec28118920322e332ee78b4db8a5d06678a6365')
+
+prepare() {
+  cd pcl
+  patch -Np1 -i ../pcl_boost-fix-01.patch
+  patch -Np1 -i ../pcl_boost-fix-02.patch
+}
+
+build() {
+  local _flags=(
+    WITH_CUDA:BOOL=OFF
+    WITH_QT:STRING=QT6
+    # this have above don't have the desired effect
+  )
+
+  cmake -B build -S "pcl" -Wno-dev \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    "${_flags[@]}"
+
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+  install -D pcl/LICENSE.txt -t "${pkgdir}/usr/share/licenses/${pkgname}"
+}
