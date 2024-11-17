@@ -1,0 +1,47 @@
+# Maintainer: Fabio 'Lolix' Loli <fabio.loli@disroot.org> -> https://github.com/FabioLolix
+
+pkgname=pcl-lite-git
+pkgver=1.14.1.r109.g0932486
+pkgrel=1
+pkgdesc="Point Cloud Library"
+arch=(x86_64)
+url="https://github.com/PointCloudLibrary/pcl"
+license=(BSD-3-Clause)
+depends=(glibc gcc-libs libpng flann vtk eigen boost-libs cjson libpcap libx11 lz4 libglvnd qhull libusb)
+makedepends=(git cmake hdf5 cli11 python-mpi4py openvr openxr ospray pdal gdal adios2 boost liblas opencascade unixodbc
+             ffmpeg proj fast_float libharu netcdf cgns embree freetype2 utf8cpp openvdb nlohmann-json verdict glew
+             postgresql-libs
+             doxygen
+
+             qt5-base qt5-declarative
+             qt6-base qt6-declarative
+            )
+provides=(pcl)
+conflicts=(pcl)
+source=("git+https://github.com/PointCloudLibrary/pcl.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd pcl
+  git describe --long --tags --abbrev=7 | sed 's/^pcl-//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  local _flags=(
+    WITH_CUDA:BOOL=OFF
+    WITH_QT:STRING=QT6
+    # this have above don't have the desired effect
+  )
+
+  cmake -B build -S "pcl" -Wno-dev \
+    -DCMAKE_BUILD_TYPE=None \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    "${_flags[@]}"
+
+  cmake --build build
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+  install -D pcl/LICENSE.txt -t "${pkgdir}/usr/share/licenses/${pkgname}"
+}
